@@ -1,0 +1,19 @@
+---
+ansible_ssh_user: vagrant
+ansible_ssh_private_key_file: ~/.vagrant.d/insecure_private_key
+
+# Location vars (same ass hieradata/<loc>/common.yaml
+location: 'vagrant'
+domain_mgmt: 'mgmt.vagrant.iaas.intern'
+
+# Named interface for mgmt on admin
+mgmt_interface: 'eth1'
+
+# default gw for mgmt is the vagrant host
+foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+
+# Global override parameter override
+foreman_override_global_parameter:
+  - name: 'ntp-server'
+    value: 'ntp.uib.no'
+

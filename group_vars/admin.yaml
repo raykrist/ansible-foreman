@@ -1,0 +1,119 @@
+---
+# NREC vars
+foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+
+# Foreman global settings
+foreman_server_url: "https://foreman.{{ domain_mgmt }}"
+foreman_username: 'admin'
+foreman_password: 'changeme'
+foreman_validate_certs: no
+
+# Foreman: global parameter
+foreman_global_parameter:
+   - name:  'time-zone'
+     value: 'Europe/Oslo'
+   - name:  'ntp-server'
+     value: 'no.pool.ntp.org'
+#  - keyboard:
+#    value: 'no'
+#  - selinux-mode:
+#    value: 'permissive'
+#  - run-puppet-in-installer:
+#    value: true
+#    parameter_type: boolean
+#  - lang:
+#    value: 'en_US'
+#  - enable-puppetlabs-puppet5-repo:
+#    value: false
+#    parameter_type: boolean
+#  - enable-puppetlabs-puppet6-repo:
+#    value: true
+
+# Foreman: template sync
+foreman_template_repo:   'https://github.com/norcams/foreman-templates.git'
+foreman_template_branch: 'master'
+foreman_template_prefix: 'norcams-'
+foreman_template_associate: always
+
+# Use hieradata for foreman settings for now
+foreman_settings: []
+
+# Foreman: domains
+foreman_domains:
+  - name: "{{ domain_mgmt }}"
+
+
+# Foreman: subnet
+foreman_subnets:
+  - name: "{{ location }}"
+    description: "mgmt net"
+    network: "{{ ansible_facts[mgmt_interface]['ipv4']['network'] }}"
+    cidr: "{{ ansible_facts[mgmt_interface]['ipv4']['prefix'] }}"
+    mask: "{{ ansible_facts[mgmt_interface]['ipv4']['netmask'] }}"
+    gateway: "{{ foreman_subnet_gateway | default(omit) }}"
+    dns_primary: "{{ foreman_dns_primary | default(ansible_facts['dns']['nameservers'][0]) }}"
+      #    from_ip: "{{ mgmt_network_cidr | ansible.utils.ipaddr(dhcp_pool_start | mandatory ) | ansible.utils.ipaddr('address') }}"
+      #    to_ip: "{{  mgmt_network_cidr | ansible.utils.ipaddr(dhcp_pool_end) | ansible.utils.ipaddr('address') }}"
+    boot_mode: "DHCP"
+    dhcp_proxy: "{{ foreman_dhcp_proxy | default(ansible_fqdn) }}"
+    tftp_proxy: "{{ foreman_tftp_proxy | default(ansible_fqdn) }}"
+    httpboot_proxy: "{{ foreman_httpboot_proxy | default(ansible_fqdn) }}"
+    ipam: 'DHCP'
+    domains:
+    - "{{ domain_mgmt }}"
+
+# Foreman: operatingsystem
+foreman_operatingsystems:
+  - name: "CentOS"
+    major: "7"
+    minor: "9"
+    os_family: "Redhat"
+    password_hash: "SHA512"
+    architectures: 'x86_64'
+    media: 'CentOS 7 mirror'
+    ptables:
+      - "{{foreman_template_prefix }}Kickstart default"
+  - name: "AlmaLinux"
+    major: "8"
+    minor: "8"
+    os_family: "Redhat"
+    password_hash: "SHA512"
+    architectures: 'x86_64'
+    media: 'AlmaLinux'
+    ptables:
+      - "{{foreman_template_prefix }}Kickstart default"
+        #    default_templates:
+        #      - template_kind: "provision"
+        #        provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
+        #      - template_kind: "PXELinux"
+        #        provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
+        #      - template_kind: "PXEGrub2"
+        #        provisioning_tomplate: "{{ foreman_template_prefix }}PXEGrub2 global default"
+
+# Foreman: operatingsystem default templates
+foreman_os_default_templates:
+  - CentOS-provision:
+    template_kind: "provision"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
+    operatingsystem: "CentOS"
+  - CentOS-PXELinux:
+    template_kind: "PXELinux"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
+    operatingsystem: "CentOS"
+  - CentOS-PXEGrub2:
+    template_kind: "PXEGrub2"
+    provisioning_template: "{{ foreman_template_prefix }}PXEGrub2 global default"
+    operatingsystem: "CentOS"
+  - Almalinux-provision:
+    template_kind: "provision"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
+    operatingsystem: "AlmaLinux"
+  - Almalinux-PXELinux:
+    template_kind: "PXELinux"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
+    operatingsystem: "AlmaLinux"
+  - Almalinux-PXEGrub2:
+    template_kind: "PXEGrub2"
+    provisioning_template: "{{ foreman_template_prefix }}PXEGrub2 global default"
+    operatingsystem: "AlmaLinux"
+

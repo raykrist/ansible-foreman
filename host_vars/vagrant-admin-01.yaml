@@ -1,0 +1,6 @@
+---
+
+# Global parameter override (this will be used over any group vars)
+#foreman_override_global_parameter:
+#  - name:  'time-zone'
+#    value: 'Europe/London'
