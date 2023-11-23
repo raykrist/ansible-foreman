@@ -30,36 +30,6 @@
     loop_control:
       label: "{{ item.name }} => {{ item.value }}"
 
-  - name: Sync templates from git repo
-    theforeman.foreman.templates_import:
-      repo: "{{ foreman_template_repo }}"
-      branch: "{{ foreman_template_branch }}"
-      prefix: "{{ foreman_template_prefix }}"
-      associate: "{{ foreman_template_associate }}"
-      server_url: "{{ foreman_server_url }}"
-      username: "{{ foreman_username }}"
-      password: "{{ foreman_password }}"
-      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
-      locations: "{{ foreman_locations | default('Default Location') }}"
-      organizations: "{{ foreman_organizations | default('Default Organization') }}"
-
-- name: Foreman setup roles ()
-  hosts: "admin"
-  gather_facts: no
-  roles:
-    - role: theforeman.foreman.settings
-    - role: theforeman.foreman.domains
-    - role: theforeman.foreman.subnets
-    - role: theforeman.foreman.operatingsystems
-#    - role: theforeman.foreman.hostgroups
-#    - role: theforeman.foreman.compute_profiles
-#    - role: theforeman.foreman.compute_resources
-
-- name: Foreman templates tasks
-  hosts: "admin"
-  gather_facts: no
-  tasks:
-
   - name: Sync os templates from git repo
     theforeman.foreman.templates_import:
       repo: "{{ foreman_template_repo }}"
@@ -72,6 +42,37 @@
       validate_certs: "{{ foreman_validate_certs | default('yes') }}"
       locations: "{{ foreman_locations | default('Default Location') }}"
       organizations: "{{ foreman_organizations | default('Default Organization') }}"
+
+  - name: Setup installation medium
+    theforeman.foreman.installation_medium:
+      name: "{{ item.name | mandatory }}"
+      path: "{{ item.path | mandatory }}"
+      state: "{{ item.state | default('present') }}"
+      server_url: "{{ foreman_server_url }}"
+      username: "{{ foreman_username }}"
+      password: "{{ foreman_password }}"
+      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
+    loop: "{{ foreman_installation_medium | default([]) }}"
+    loop_control:
+      label: "{{ item.name }} => {{ item.path }}"
+
+- name: Foreman setup roles ()
+  hosts: "admin"
+  gather_facts: no
+  roles:
+    - role: theforeman.foreman.settings
+    - role: theforeman.foreman.domains
+    - role: theforeman.foreman.subnets
+    - role: theforeman.foreman.operatingsystems
+      ignore_errors: "{{ ansible_check_mode }}"
+    - role: theforeman.foreman.hostgroups
+#    - role: theforeman.foreman.compute_profiles
+#    - role: theforeman.foreman.compute_resources
+
+- name: Foreman templates tasks
+  hosts: "admin"
+  gather_facts: no
+  tasks:
 
   - name: "Create os template association"
     theforeman.foreman.os_default_template:

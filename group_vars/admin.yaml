@@ -1,6 +1,7 @@
 ---
 # NREC vars
 foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+foreman_repo_server: "https://download.iaas.uio.no/nrec/{{ repo_env }}"
 
 # Foreman global settings
 foreman_server_url: "https://foreman.{{ domain_mgmt }}"
@@ -34,6 +35,15 @@ foreman_template_repo:   'https://github.com/norcams/foreman-templates.git'
 foreman_template_branch: 'master'
 foreman_template_prefix: 'norcams-'
 foreman_template_associate: always
+
+# Installation medium
+foreman_installation_medium:
+  - name: "CentOS NREC mirror"
+    path: "{{ foreman_repo_server }}/el7/centos-base"
+    os_family: "Red Hat"
+  - name: "AlmaLinux NREC mirror"
+    path: "{{ foreman_repo_server }}/el8/almalinux-base"
+    os_family: "Red Hat"
 
 # Use hieradata for foreman settings for now
 foreman_settings: []
@@ -70,7 +80,7 @@ foreman_operatingsystems:
     os_family: "Redhat"
     password_hash: "SHA512"
     architectures: 'x86_64'
-    media: 'CentOS 7 mirror'
+    media: 'CentOS NREC mirror'
     ptables:
       - "{{foreman_template_prefix }}Kickstart default"
   - name: "AlmaLinux"
@@ -79,9 +89,10 @@ foreman_operatingsystems:
     os_family: "Redhat"
     password_hash: "SHA512"
     architectures: 'x86_64'
-    media: 'AlmaLinux'
+    media: 'AlmaLinux NREC mirror'
     ptables:
       - "{{foreman_template_prefix }}Kickstart default"
+      - "{{foreman_template_prefix }}Kickstart default uefi"
         #    default_templates:
         #      - template_kind: "provision"
         #        provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
@@ -102,7 +113,7 @@ foreman_os_default_templates:
     operatingsystem: "CentOS"
   - CentOS-PXEGrub2:
     template_kind: "PXEGrub2"
-    provisioning_template: "{{ foreman_template_prefix }}PXEGrub2 global default"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXEGrub2"
     operatingsystem: "CentOS"
   - Almalinux-provision:
     template_kind: "provision"
@@ -114,6 +125,42 @@ foreman_os_default_templates:
     operatingsystem: "AlmaLinux"
   - Almalinux-PXEGrub2:
     template_kind: "PXEGrub2"
-    provisioning_template: "{{ foreman_template_prefix }}PXEGrub2 global default"
+    provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXEGrub2"
     operatingsystem: "AlmaLinux"
 
+# Foreman hostgroups
+foreman_hostgroups:
+  - name: "el7"
+    architecture: "x86_64"
+    operatingsystem: "CentOS"
+    medium: "CentOS NREC mirror"
+    ptable: "{{foreman_template_prefix }}Kickstart default"
+    subnet: "{{ location }}"
+    domain: "{{ domain_mgmt }}"
+    pxe_loader: "PXELinux BIOS"
+    puppet_ca_proxy: "{{ foreman_puppet_ca_proxy | default(ansible_fqdn) }}"
+  - name: "el8"
+    architecture: "x86_64"
+    operatingsystem: "AlmaLinux"
+    medium: "AlmaLinux NREC mirror"
+    ptable: "{{foreman_template_prefix }}Kickstart default"
+    subnet: "{{ location }}"
+    domain: "{{ domain_mgmt }}"
+    pxe_loader: "PXELinux BIOS"
+    puppet_ca_proxy: "{{ foreman_puppet_ca_proxy | default(ansible_fqdn) }}"
+  - name: "legacy"
+    parent: "el8"
+    parameters:
+      - name: "biosdevname"
+        value: 1
+      - name: "installdevice"
+        value: "sda"
+  - name: "uefi"
+    parent: "el8"
+    ptable: "{{foreman_template_prefix }}Kickstart default uefi"
+    pxe_loader: "Grub2 UEFI"
+    parameters:
+      - name: "biosdevname"
+        value: 1
+      - name: "installdevice"
+        value: "sda"

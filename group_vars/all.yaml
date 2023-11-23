@@ -4,3 +4,6 @@ mgmt_network_cidr: "{{ansible_facts[mgmt_interface]['ipv4']['network']}}/{{ansib
 
 # default mgmt gw is proxy-02
 foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('97') | ansible.utils.ipaddr('address') }}"
+
+# default repo env
+repo_env: 'test'
