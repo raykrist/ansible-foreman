@@ -7,3 +7,7 @@ foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('97') | an
 
 # default repo env
 repo_env: 'test'
+
+# latest os versions (override in group_vars/<loc>.yaml if needed)
+el7_latest: "CentOS 7.9"
+el8_latest: "AlmaLinux 8.9"

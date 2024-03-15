@@ -40,10 +40,10 @@ foreman_template_associate: always
 foreman_installation_medium:
   - name: "CentOS NREC mirror"
     path: "{{ foreman_repo_server }}/el7/centos-base"
-    os_family: "Red Hat"
+    os_family: "Redhat"
   - name: "AlmaLinux NREC mirror"
     path: "{{ foreman_repo_server }}/el8/almalinux-base"
-    os_family: "Red Hat"
+    os_family: "Redhat"
 
 # Use hieradata for foreman settings for now
 foreman_settings: []
@@ -75,8 +75,8 @@ foreman_subnets:
 # Foreman: operatingsystem
 foreman_operatingsystems:
   - name: "CentOS"
-    major: "7"
-    minor: "9"
+    major: "{{ el7_latest | regex_search('CentOS ([0-9]+).([0-9]+)', '\\1') | join }}"
+    minor: "{{ el7_latest | regex_search('CentOS ([0-9]+).([0-9]+)', '\\2') | join }}"
     os_family: "Redhat"
     password_hash: "SHA512"
     architectures: 'x86_64'
@@ -84,8 +84,8 @@ foreman_operatingsystems:
     ptables:
       - "{{foreman_template_prefix }}Kickstart default"
   - name: "AlmaLinux"
-    major: "8"
-    minor: "8"
+    major: "{{ el8_latest | regex_search('AlmaLinux ([0-9]+).([0-9]+)', '\\1') | join }}"
+    minor: "{{ el8_latest | regex_search('AlmaLinux ([0-9]+).([0-9]+)', '\\2') | join }}"
     os_family: "Redhat"
     password_hash: "SHA512"
     architectures: 'x86_64'
@@ -106,33 +106,33 @@ foreman_os_default_templates:
   - CentOS-provision:
     template_kind: "provision"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
-    operatingsystem: "CentOS"
+    operatingsystem: "{{ el7_latest }}"
   - CentOS-PXELinux:
     template_kind: "PXELinux"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
-    operatingsystem: "CentOS"
+    operatingsystem: "{{ el7_latest }}"
   - CentOS-PXEGrub2:
     template_kind: "PXEGrub2"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXEGrub2"
-    operatingsystem: "CentOS"
+    operatingsystem: "{{ el7_latest }}"
   - Almalinux-provision:
     template_kind: "provision"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
-    operatingsystem: "AlmaLinux"
+    operatingsystem: "{{ el8_latest }}"
   - Almalinux-PXELinux:
     template_kind: "PXELinux"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
-    operatingsystem: "AlmaLinux"
+    operatingsystem: "{{ el8_latest }}"
   - Almalinux-PXEGrub2:
     template_kind: "PXEGrub2"
     provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXEGrub2"
-    operatingsystem: "AlmaLinux"
+    operatingsystem: "{{ el8_latest }}"
 
 # Foreman hostgroups
 foreman_hostgroups:
   - name: "el7"
     architecture: "x86_64"
-    operatingsystem: "CentOS"
+    operatingsystem: "{{ el7_latest }}"
     medium: "CentOS NREC mirror"
     ptable: "{{foreman_template_prefix }}Kickstart default"
     subnet: "{{ location }}"
@@ -141,7 +141,7 @@ foreman_hostgroups:
     puppet_ca_proxy: "{{ foreman_puppet_ca_proxy | default(ansible_fqdn) }}"
   - name: "el8"
     architecture: "x86_64"
-    operatingsystem: "AlmaLinux"
+    operatingsystem: "{{ el8_latest }}"
     medium: "AlmaLinux NREC mirror"
     ptable: "{{foreman_template_prefix }}Kickstart default"
     subnet: "{{ location }}"
@@ -164,3 +164,4 @@ foreman_hostgroups:
         value: 1
       - name: "installdevice"
         value: "sda"
+

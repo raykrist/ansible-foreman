@@ -9,6 +9,8 @@
       server_url: "{{ foreman_server_url }}"
       validate_certs: "{{ foreman_validate_certs | default('true') }}"
 
+## First stage: initial setup
+
   tasks:
 
   - name: "Debug global parameters"
@@ -34,26 +36,41 @@
                                               list_merge='prepend_rp') }}"
     loop_control:
       label: "{{ item.name }} => {{ item.value }}"
+    tags: global_paramenter
 
-  - name: Sync os templates from git repo
-    theforeman.foreman.templates_import:
+#  - name: Sync os templates from git repo
+#    theforeman.foreman.templates_import:
+#      <<: *foreman_auth
+#      repo: "{{ foreman_template_repo }}"
+#      branch: "{{ foreman_template_branch }}"
+#      prefix: "{{ foreman_template_prefix }}"
+#      associate: "{{ foreman_template_associate }}"
+#      locations: "{{ foreman_locations | default('Default Location') }}"
+#      organizations: "{{ foreman_organizations | default('Default Organization') }}"
+#    tags: templates_import
+
+  - name: "Setup partition table templates"
+    theforeman.foreman.partition_table:
       <<: *foreman_auth
-      repo: "{{ foreman_template_repo }}"
-      branch: "{{ foreman_template_branch }}"
-      prefix: "{{ foreman_template_prefix }}"
-      associate: "{{ foreman_template_associate }}"
-      locations: "{{ foreman_locations | default('Default Location') }}"
-      organizations: "{{ foreman_organizations | default('Default Organization') }}"
+      layout: '{{ lookup("file", item) }}'
+      os_family: "Redhat"
+    with_fileglob:
+       - "{{ inventory_dir }}/files/partition_tables_templates/*.erb"
+    tags: partition_table
 
   - name: Setup installation medium
     theforeman.foreman.installation_medium:
       <<: *foreman_auth
       name: "{{ item.name | mandatory }}"
       path: "{{ item.path | mandatory }}"
+      os_family: "{{ item.os_family | default(omit) }}"
       state: "{{ item.state | default('present') }}"
     loop: "{{ foreman_installation_medium | default([]) }}"
     loop_control:
       label: "{{ item.name }} => {{ item.path }}"
+    tags: installation_medium
+
+## Second stage: roles
 
 - name: Foreman setup roles ()
   hosts: "admin"
@@ -65,15 +82,30 @@
     - role: theforeman.foreman.operatingsystems
       ignore_errors: "{{ ansible_check_mode }}"
     - role: theforeman.foreman.hostgroups
+      ignore_errors: "{{ ansible_check_mode }}"
+#    - role: theforeman.foreman.provisioning_templates
 #    - role: theforeman.foreman.compute_profiles
 #    - role: theforeman.foreman.compute_resources
+
+
+      ## Third stage: templates
 
 - name: Foreman templates tasks
   hosts: "admin"
   gather_facts: no
   tasks:
 
-  - name: "Create os template association"
+  - name: "Setup provisioning snippet templates"
+    theforeman.foreman.provisioning_template:
+      <<: *foreman_auth
+      template: '{{ lookup("file", item) }}'
+      operatingsystems: "{{ ('provisioning_templates' in item) | ternary([el7_latest, el8_latest], omit) }}"
+    with_fileglob:
+       - "{{ inventory_dir }}/files/provisioning_templates/*.erb"
+       - "{{ inventory_dir }}/files/snippet/*.erb"
+    tags: provisioning_template
+
+  - name: "Create OS template association"
     theforeman.foreman.os_default_template:
       <<: *foreman_auth
       operatingsystem: "{{ item.operatingsystem }}"
@@ -84,4 +116,5 @@
     loop_control:
       label: "{{ item.operatingsystem }} => {{ item.provisioning_template }}"
     ignore_errors: "{{ ansible_check_mode }}"
+    tags: os_default_template
 
