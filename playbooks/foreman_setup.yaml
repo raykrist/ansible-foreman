@@ -1,6 +1,14 @@
 ---
 - name: Foreman setup tasks
   hosts: "admin"
+
+  vars:
+    foreman_auth: &foreman_auth
+      username: "{{ foreman_username }}"
+      password: "{{ foreman_password }}"
+      server_url: "{{ foreman_server_url }}"
+      validate_certs: "{{ foreman_validate_certs | default('true') }}"
+
   tasks:
 
   - name: "Debug global parameters"
@@ -15,14 +23,11 @@
 
   - name: Set Global Parameters
     theforeman.foreman.global_parameter:
+      <<: *foreman_auth
       state: "{{ item.state | default('present') }}"
       parameter_type: "{{ item.parameter_type | default(omit) }}"
       name: "{{ item.name }}"
       value: "{{ item.value | mandatory }}"
-      server_url: "{{ foreman_server_url }}"
-      username: "{{ foreman_username }}"
-      password: "{{ foreman_password }}"
-      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
     loop: "{{ [foreman_global_parameter, foreman_override_global_parameter | default([{}])] |
               community.general.lists_mergeby('name',
                                               recursive=true,
@@ -32,26 +37,20 @@
 
   - name: Sync os templates from git repo
     theforeman.foreman.templates_import:
+      <<: *foreman_auth
       repo: "{{ foreman_template_repo }}"
       branch: "{{ foreman_template_branch }}"
       prefix: "{{ foreman_template_prefix }}"
       associate: "{{ foreman_template_associate }}"
-      server_url: "{{ foreman_server_url }}"
-      username: "{{ foreman_username }}"
-      password: "{{ foreman_password }}"
-      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
       locations: "{{ foreman_locations | default('Default Location') }}"
       organizations: "{{ foreman_organizations | default('Default Organization') }}"
 
   - name: Setup installation medium
     theforeman.foreman.installation_medium:
+      <<: *foreman_auth
       name: "{{ item.name | mandatory }}"
       path: "{{ item.path | mandatory }}"
       state: "{{ item.state | default('present') }}"
-      server_url: "{{ foreman_server_url }}"
-      username: "{{ foreman_username }}"
-      password: "{{ foreman_password }}"
-      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
     loop: "{{ foreman_installation_medium | default([]) }}"
     loop_control:
       label: "{{ item.name }} => {{ item.path }}"
@@ -76,10 +75,7 @@
 
   - name: "Create os template association"
     theforeman.foreman.os_default_template:
-      server_url: "{{ foreman_server_url }}"
-      username: "{{ foreman_username }}"
-      password: "{{ foreman_password }}"
-      validate_certs: "{{ foreman_validate_certs | default('yes') }}"
+      <<: *foreman_auth
       operatingsystem: "{{ item.operatingsystem }}"
       template_kind: "{{ item.template_kind }}"
       provisioning_template: "{{ item.provisioning_template }}"

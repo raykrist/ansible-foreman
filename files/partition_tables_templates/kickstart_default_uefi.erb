@@ -1,0 +1,33 @@
+<%#
+kind: ptable
+name: norcams-Kickstart default uefi
+model: Ptable
+oses:
+- CentOS
+- Fedora
+- RedHat
+locations:
+- Default Location
+organizations:
+- Default Organization
+%>
+<%
+  installdevice = host_param('installdevice') ? host_param('installdevice') : 'default'
+  ondisk        = host_param('installdevice') ? "--ondisk=#{installdevice}" : ''
+  clear_osdisk  = host_param('keepdevices')   ? "--drives=#{installdevice}" : ''
+  driverdisk    = host_param('extradrivers')  ? host_param('extradrivers')  : nil
+%>
+
+<% if host_param('extradrivers') -%>
+driverdisk --source=<%= driverdisk %>
+<% end -%>
+
+zerombr
+clearpart --all --initlabel <%= clear_osdisk %>
+part /boot/efi --fstype="efi" <%= ondisk %> --size=200 --fsoptions="umask=0077,shortname=winnt"
+part /boot --fstype=xfs <%= ondisk %> --size=512 --asprimary
+part pv.<%= installdevice %> <%= ondisk %> --fstype="lvmpv" --size=5120 --grow --maxsize=10240 --asprimary
+part pv.ext <%= ondisk %> --grow
+volgroup vg_root pv.<%= installdevice %>
+  logvol swap --name=lv_swap --vgname=vg_root --size=256
+  logvol /    --name=lv_root --vgname=vg_root --fstype=xfs --size=4096 --grow
