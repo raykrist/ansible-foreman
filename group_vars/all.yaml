@@ -6,7 +6,7 @@ mgmt_network_cidr: "{{ansible_facts[mgmt_interface]['ipv4']['network']}}/{{ansib
 foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('97') | ansible.utils.ipaddr('address') }}"
 
 # default repo env
-repo_env: 'test'
+repo_env: 'prod'
 
 # latest os versions (override in group_vars/<loc>.yaml if needed)
 el7_latest: "CentOS 7.9"

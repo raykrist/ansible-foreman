@@ -1,6 +1,5 @@
 ---
 # NREC vars
-foreman_subnet_gateway: "{{  mgmt_network_cidr | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
 foreman_repo_server: "https://download.iaas.uio.no/nrec/{{ repo_env }}"
 
 # Foreman global settings
