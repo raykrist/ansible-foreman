@@ -70,6 +70,17 @@
       label: "{{ item.name }} => {{ item.path }}"
     tags: installation_medium
 
+  - name: Setup puppet environments
+    theforeman.foreman.puppet_environment:
+      <<: *foreman_auth
+      name: "{{ item.name | mandatory }}"
+      locations: "{{ foreman_locations | default('Default Location') }}"
+      organizations: "{{ foreman_organizations | default('Default Organization') }}"
+      state: "{{ item.state | default('present') }}"
+    loop: "{{ foreman_puppet_environments | default([]) }}"
+    loop_control:
+      label: "{{ item.name }}"
+
 ## Second stage: roles
 
 - name: Foreman setup roles ()
@@ -83,12 +94,8 @@
       ignore_errors: "{{ ansible_check_mode }}"
     - role: theforeman.foreman.hostgroups
       ignore_errors: "{{ ansible_check_mode }}"
-#    - role: theforeman.foreman.provisioning_templates
-#    - role: theforeman.foreman.compute_profiles
-#    - role: theforeman.foreman.compute_resources
 
-
-      ## Third stage: templates
+      ## Third stage: templates and compute
 
 - name: Foreman templates tasks
   hosts: "admin"
@@ -118,3 +125,36 @@
     ignore_errors: "{{ ansible_check_mode }}"
     tags: os_default_template
 
+  - name: "Setup compute resources"
+    theforeman.foreman.compute_resource:
+      <<: *foreman_auth
+      name: "{{ item.name | mandatory }}"
+      provider: "{{ item.provider | default('libvirt') }}"
+      provider_params:
+        url: "{{ item.url | default('qemu+tcp://' ~ item.name ~ '/system') }}"
+        display_type: "{{ item.display_type | default('vnc') }}"
+      state: "{{ item.state | default('present') }}"
+    loop: "{{ foreman_compute_resource | default([]) }}"
+    loop_control:
+      label: "{{ item.name }}"
+    ignore_errors: "{{ ansible_check_mode }}"
+    tags: compute_resource
+
+  - name: "Setup compute profiles [This will fail if foreman or libvirt on controller is down]"
+    theforeman.foreman.compute_profile:
+      <<: *foreman_auth
+      name: "{{ item[0].name }}"
+      compute_attributes:
+        - compute_resource: "{{ item[1].name }}"
+          vm_attrs:
+            cores: "{{ item[0].vm_attrs.cores | mandatory }}"
+            memory: "{{ item[0].vm_attrs.memory | mandatory }}"
+            sockets: "{{ item[0].vm_attrs.sockets | default(1) }}"
+            interfaces_attributes: "{{ item[0].vm_attrs.interfaces_attributes | mandatory }}"
+            volumes_attributes: "{{ item[0].vm_attrs.volumes_attributes | mandatory }}"
+      state: "{{ item[0].state | default('present') }}"
+    loop: "{{ foreman_compute_profile | product(foreman_compute_resource) | list }}"
+    loop_control:
+      label: "{{ item[1].name ~ ' => ' ~ item[0].name }}"
+    ignore_errors: true
+    tags: compute_profile

@@ -1,4 +1,6 @@
 ---
+# Note: to override this add overrides to the node file in host_vars/
+
 # NREC vars
 foreman_repo_server: "https://download.iaas.uio.no/nrec/{{ repo_env }}"
 
@@ -51,7 +53,6 @@ foreman_settings: []
 foreman_domains:
   - name: "{{ domain_mgmt }}"
 
-
 # Foreman: subnet
 foreman_subnets:
   - name: "{{ location }}"
@@ -92,13 +93,6 @@ foreman_operatingsystems:
     ptables:
       - "{{foreman_template_prefix }}Kickstart default"
       - "{{foreman_template_prefix }}Kickstart default uefi"
-        #    default_templates:
-        #      - template_kind: "provision"
-        #        provisioning_template: "{{ foreman_template_prefix }}Kickstart default"
-        #      - template_kind: "PXELinux"
-        #        provisioning_template: "{{ foreman_template_prefix }}Kickstart default PXELinux"
-        #      - template_kind: "PXEGrub2"
-        #        provisioning_tomplate: "{{ foreman_template_prefix }}PXEGrub2 global default"
 
 # Foreman: operatingsystem default templates
 foreman_os_default_templates:
@@ -164,3 +158,106 @@ foreman_hostgroups:
       - name: "installdevice"
         value: "sda"
 
+# puppet environments
+foreman_puppet_environments:
+  - name: "production"
+  - name: "admin"
+  - name: "ussuri"
+
+# Compute profiles
+foreman_compute_profile:
+  - name: small
+    vm_attrs:
+      cores:   '1'
+      memory: '2254857830' #2.1 GB for el8.6
+      interfaces_attributes:
+        '0':
+          bridge: br0
+          model:  'virtio'
+          type:   'bridge'
+        'br1':
+          bridge: br1
+          model:  'virtio'
+          type:   'bridge'
+      volumes_attributes:
+        '0':
+          allocation:   '0G'
+          pool_name:    'dirpool'
+          capacity:     '10G'
+          format_type:  'qcow2'
+  - name: medium
+    vm_attrs:
+      cores:   '1'
+      memory: '4294967296'
+      interfaces_attributes:
+        '0':
+          bridge: br0
+          model:  'virtio'
+          type:   'bridge'
+        'br1':
+          bridge: br1
+          model:  'virtio'
+          type:   'bridge'
+      volumes_attributes:
+        '0':
+          allocation:   '0G'
+          pool_name:    'dirpool'
+          capacity:     '10G'
+          format_type:  'qcow2'
+  - name: large
+    vm_attrs:
+      cores:   '2'
+      memory: '4294967296'
+      interfaces_attributes:
+        '0':
+          bridge: br0
+          model:  'virtio'
+          type:   'bridge'
+        'br1':
+          bridge: br1
+          model:  'virtio'
+          type:   'bridge'
+      volumes_attributes:
+        '0':
+          allocation:   '0G'
+          pool_name:    'dirpool'
+          capacity:     '10G'
+          format_type:  'qcow2'
+  - name: xlarge
+    vm_attrs:
+      cores:   '2'
+      memory: '8589934592'
+      interfaces_attributes:
+        '0':
+          bridge: br0
+          model:  'virtio'
+          type:   'bridge'
+        'br1':
+          bridge: br1
+          model:  'virtio'
+          type:   'bridge'
+      volumes_attributes:
+        '0':
+          allocation:   '0G'
+          pool_name:    'dirpool'
+          capacity:     '10G'
+          format_type:  'qcow2'
+  - name: 2xlarge
+    vm_attrs:
+      cores:   '4'
+      memory: '8589934592'
+      interfaces_attributes:
+        '0':
+          bridge: br0
+          model:  'virtio'
+          type:   'bridge'
+        'br1':
+          bridge: br1
+          model:  'virtio'
+          type:   'bridge'
+      volumes_attributes:
+        '0':
+          allocation:   '0G'
+          pool_name:    'dirpool'
+          capacity:     '10G'
+          format_type:  'qcow2'
