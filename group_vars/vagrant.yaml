@@ -1,4 +1,7 @@
 ---
+# Note: this can override everything in all.yaml, to override admin.yaml you
+# will need to update the node file in host_vars/
+
 # vagrant config
 ansible_ssh_user: vagrant
 ansible_ssh_private_key_file: ~/.vagrant.d/insecure_private_key
@@ -22,3 +25,5 @@ foreman_override_global_parameter:
   - name: 'ntp-server'
     value: 'ntp.uib.no'
 
+foreman_compute_resource:
+  - name: "vagrant-controller-01.{{ domain_mgmt }}"
