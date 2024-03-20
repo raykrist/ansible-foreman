@@ -11,3 +11,7 @@ repo_env: 'prod'
 # latest os versions (override in group_vars/<loc>.yaml if needed)
 el7_latest: "CentOS 7.9"
 el8_latest: "AlmaLinux 8.9"
+
+# default compute resource, overide in group_vars/<location>.yaml
+foreman_compute_resource:
+  - name: "{{ location }}-controller-01.{{ domain_mgmt }}"
